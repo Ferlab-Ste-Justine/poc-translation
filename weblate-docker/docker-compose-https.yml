@@ -1,0 +1,52 @@
+version: '3'
+services:
+  weblate:
+    image: weblate/weblate
+    tmpfs:
+    - /run
+    - /tmp
+    volumes:
+    - weblate-data:/app/data
+    - weblate-cache:/app/cache
+    env_file:
+    - ./environment
+    restart: always
+    read_only: true
+    depends_on:
+    - database
+    - cache
+    environment:
+      WEBLATE_SITE_DOMAIN: weblate.localhost.com
+      WEBLATE_ENABLE_HTTPS: 1
+      WEBLATE_IP_PROXY_HEADER: HTTP_X_FORWARDED_FOR
+  database:
+    image: postgres:16-alpine
+    env_file:
+    - ./environment
+    volumes:
+    - postgres-data:/var/lib/postgresql/data
+    restart: always
+  cache:
+    image: redis:7-alpine
+    restart: always
+    read_only: true
+    command: [redis-server, --save, '60', '1']
+    volumes:
+    - redis-data:/data
+  https-portal:
+    image: steveltn/https-portal:1
+    ports:
+    - 80:80
+    - 443:443
+    restart: always
+    environment:
+      STAGE: production
+      PROXY_READ_TIMEOUT: 3600
+    volumes:
+    - ssl-certs:/var/lib/https-portal
+volumes:
+  weblate-cache: {}
+  weblate-data: {}
+  postgres-data: {}
+  redis-data: {}
+  ssl-certs: {}

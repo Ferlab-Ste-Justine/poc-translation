@@ -1,0 +1,16 @@
+{
+  "collectionName": "components_shared_traductions",
+  "info": {
+    "displayName": "traduction",
+    "icon": "bulletList"
+  },
+  "options": {},
+  "attributes": {
+    "key": {
+      "type": "string"
+    },
+    "value": {
+      "type": "string"
+    }
+  }
+}

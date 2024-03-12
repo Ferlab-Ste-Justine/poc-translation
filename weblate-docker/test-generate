@@ -1,0 +1,43 @@
+#!/bin/sh
+cat > docker-compose.override.yml <<EOT
+version: '3'
+services:
+  weblate:
+    image: ${TEST_CONTAINER:-weblate/weblate:edge}
+    environment:
+      WEBLATE_TIME_ZONE: Europe/Prague
+      WEBLATE_SITE_DOMAIN: test.example.com
+      ${TEST_EXTRA_ENV}
+    ports:
+      - 8080:8080
+      - 4443:4443
+EOT
+
+if [ "$3" = "split" ] ; then
+  mv docker-compose-split.yml docker-compose.yml
+  for service in celery-backup celery-beat celery-celery celery-memory celery-notify celery-translate ; do
+    cat >> docker-compose.override.yml <<EOT
+  weblate-${service}:
+    image: ${TEST_CONTAINER:-weblate/weblate:edge}
+    environment:
+      WEBLATE_TIME_ZONE: Europe/Prague
+      WEBLATE_SITE_DOMAIN: test.example.com
+EOT
+  done
+  sed -i -e '/- \/tmp/D' -e '/read_only: true/D' docker-compose.yml
+fi
+if [ "$3" = "read-write" ] ; then
+    sed -i -e '/- \/tmp/D' -e '/read_only: true/D' docker-compose.yml
+else
+    # Allow execution in tmp
+    sed -i 's/- \/tmp/- \/tmp:exec/' docker-compose.yml
+fi
+
+
+IP=127.0.0.1
+PORT=${1:-8080}
+PROTO=${2:-http}
+
+cat > .test.env <<EOT
+URL=$PROTO://$IP:$PORT/
+EOT
